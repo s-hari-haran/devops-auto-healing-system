@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOps Auto Healing Multi Agent System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5568d3;
+        }
+        
+        button.secondary {
+            background: #764ba2;
+        }
+        
+        button.secondary:hover {
+            background: #633d8a;
+        }
+        
+        button.success {
+            background: #10b981;
+        }
+        
+        button.success:hover {
+            background: #059669;
+        }
+        
+        button.danger {
+            background: #ef4444;
+        }
+        
+        button.danger:hover {
+            background: #dc2626;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .error-item {
+            background: #f9fafb;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #ef4444;
+            border-radius: 4px;
+        }
+        
+        .error-item h3 {
+            color: #ef4444;
+            margin-bottom: 10px;
+        }
+        
+        .error-item pre {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        
+        .fix-suggestion {
+            background: #ecfdf5;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #10b981;
+            border-radius: 4px;
+        }
+        
+        .fix-suggestion h4 {
+            color: #10b981;
+            margin-bottom: 10px;
+        }
+        
+        .code-block {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 DevOps Auto Healing Multi Agent System</h1>
+        <p class="subtitle">AI-powered error detection and automatic code fixing with Claude</p>
+        
+        <!-- Repository Connection -->
+        <div class="section">
+            <h2>📦 Connect GitHub Repository</h2>
+            <div id="repo-status" class="status info" style="{% if state.repo_name %}display:block{% else %}display:none{% endif %}">
+                Connected to: <strong>{{ state.repo_name }}</strong>
+            </div>
+            <form id="connect-form">
+                <div class="form-group">
+                    <label for="repo_url">Repository URL:</label>
+                    <input type="text" id="repo_url" name="repo_url" placeholder="https://github.com/username/repo.git" value="{{ state.repo_url }}">
+                </div>
+                <div class="form-group">
+                    <label for="github_token">GitHub Personal Access Token (optional for public repos):</label>
+                    <input type="password" id="github_token" name="github_token" placeholder="ghp_xxxxxxxxxxxxx">
+                </div>
+                <button type="submit">Connect Repository</button>
+            </form>
+        </div>
+        
+        <!-- Error Scanner -->
+        <div class="section">
+            <h2>🔍 Scan for Errors</h2>
+            <button id="scan-btn" class="secondary">Scan Error Logs</button>
+            <div id="errors-container"></div>
+        </div>
+        
+        <!-- Analysis Results -->
+        <div id="analysis-section" class="section" style="display:none;">
+            <h2>🧠 AI Analysis & Fixes</h2>
+            <div id="analysis-results"></div>
+        </div>
+        
+        <!-- Loading Indicator -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+    </div>
+    
+    <script>
+        // Connect Repository
+        document.getElementById('connect-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch('/connect_repo', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const status = document.getElementById('repo-status');
+                    status.className = 'status success';
+                    status.textContent = data.message;
+                    status.style.display = 'block';
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Connection failed: ' + error);
+            }
+        });
+        
+        // Scan for Errors
+        document.getElementById('scan-btn').addEventListener('click', async () => {
+            document.getElementById('loading').style.display = 'block';
+            
+            try {
+                const response = await fetch('/scan_errors', { method: 'POST' });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayErrors(data.errors);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Scan failed: ' + error);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+        
+        function displayErrors(errors) {
+            const container = document.getElementById('errors-container');
+            container.innerHTML = '';
+            
+            if (errors.length === 0) {
+                container.innerHTML = '<p>No errors found!</p>';
+                return;
+            }
+            
+            errors.forEach((error, index) => {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-item';
+                errorDiv.innerHTML = `
+                    <h3>Error in: ${error.file}</h3>
+                    <pre>${error.log}</pre>
+                    <button class="success" onclick="analyzeError(${index}, '${error.file}', \`${error.log.replace(/`/g, '\\`')}\`)">
+                        Analyze & Get Fix
+                    </button>
+                `;
+                container.appendChild(errorDiv);
+            });
+        }
+        
+        async function analyzeError(index, filePath, errorLog) {
+            document.getElementById('loading').style.display = 'block';
+            
+            try {
+                const response = await fetch('/analyze_error', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ file_path: filePath, error_log: errorLog })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayAnalysis(filePath, data);
+                } else {
+                    alert('Analysis failed: ' + data.error);
+                }
+            } catch (error) {
+                alert('Analysis failed: ' + error);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        function displayAnalysis(filePath, analysis) {
+            const section = document.getElementById('analysis-section');
+            const results = document.getElementById('analysis-results');
+            
+            const fixDiv = document.createElement('div');
+            fixDiv.className = 'fix-suggestion';
+            fixDiv.innerHTML = `
+                <h4>Fix for: ${filePath}</h4>
+                <p><strong>Explanation:</strong> ${analysis.explanation}</p>
+                <p><strong>Suggested Fix:</strong> ${analysis.suggested_fix}</p>
+                <h4>Fixed Code:</h4>
+                <div class="code-block"><pre>${analysis.fixed_code}</pre></div>
+                <div class="button-group">
+                    <button class="success" onclick="applyFix('${filePath}', \`${analysis.fixed_code.replace(/`/g, '\\`')}\`)">
+                        ✓ Accept & Apply Fix
+                    </button>
+                    <button class="danger" onclick="this.parentElement.parentElement.remove()">
+                        ✗ Reject
+                    </button>
+                </div>
+            `;
+            
+            results.appendChild(fixDiv);
+            section.style.display = 'block';
+        }
+        
+        async function applyFix(filePath, fixedCode) {
+            if (!confirm('This will create a new branch and push the fix to your repository. Continue?')) {
+                return;
+            }
+            
+            document.getElementById('loading').style.display = 'block';
+            
+            try {
+                const response = await fetch('/apply_fix', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ file_path: filePath, fixed_code: fixedCode })
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    alert('Success! ' + data.message);
+                } else {
+                    alert('Failed to apply fix: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Failed to apply fix: ' + error);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
